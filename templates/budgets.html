@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Budgets — FinanceTrack{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">Budget Manager</h4>
+    <small class="text-muted">Set and track monthly spending limits</small>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Add / Edit Budget Form -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body p-4">
+        <h6 class="fw-semibold mb-3"><i class="bi bi-plus-circle me-2 text-primary"></i>Set Budget</h6>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label fw-medium small">Category</label>
+            <select name="category" class="form-select" required>
+              <option value="" disabled selected>Choose category</option>
+              {% for cat in expense_categories %}
+              <option value="{{ cat }}">{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-medium small">Monthly Limit ($)</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" name="limit" class="form-control"
+                     placeholder="0.00" step="0.01" min="1" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-add-txn w-100">
+            <i class="bi bi-floppy me-2"></i>Save Budget
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body">
+        <h6 class="fw-semibold mb-2"><i class="bi bi-info-circle me-2 text-info"></i>Tips</h6>
+        <ul class="small text-muted ps-3 mb-0">
+          <li>Setting a budget for a category updates the existing one.</li>
+          <li>🟢 Under 70% — on track</li>
+          <li>🟡 70–89% — watch spending</li>
+          <li>🔴 90%+ — over or near limit</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget Status List -->
+  <div class="col-lg-8">
+    {% if budgets %}
+    <div class="row g-3">
+      {% for b in budgets %}
+      <div class="col-sm-6">
+        <div class="card budget-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="fw-semibold mb-0">{{ b.category }}</h6>
+              <form method="post" action="/budgets/delete/{{ b.id }}"
+                    onsubmit="return confirm('Remove this budget?')" class="ms-2">
+                <button type="submit" class="btn btn-sm btn-link text-danger p-0">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+
+            <div class="d-flex justify-content-between small text-muted mb-1">
+              <span>Spent: <strong class="text-dark">${{ "%.2f"|format(b.spent) }}</strong></span>
+              <span>Limit: <strong class="text-dark">${{ "%.2f"|format(b.limit) }}</strong></span>
+            </div>
+
+            <div class="progress mb-2" style="height:10px; border-radius:8px;">
+              <div class="progress-bar {% if b.percent >= 90 %}bg-danger{% elif b.percent >= 70 %}bg-warning{% else %}bg-success{% endif %}"
+                   style="width:{{ b.percent }}%; border-radius:8px;"
+                   role="progressbar" aria-valuenow="{{ b.percent }}" aria-valuemin="0" aria-valuemax="100">
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="small fw-semibold {% if b.percent >= 90 %}text-danger{% elif b.percent >= 70 %}text-warning{% else %}text-success{% endif %}">
+                {{ b.percent }}% used
+              </span>
+              <span class="small text-muted">
+                ${{ "%.2f"|format(b.remaining) }} remaining
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-body empty-state py-5">
+        <i class="bi bi-pie-chart display-4 text-muted"></i>
+        <p class="text-muted mt-2">No budgets set yet. Use the form to get started.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

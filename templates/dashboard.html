@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — FinanceTrack{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">Overview</h4>
+    <small class="text-muted">Current month at a glance</small>
+  </div>
+  <a href="/transactions/add" class="btn btn-add-txn">
+    <i class="bi bi-plus-lg me-1"></i>Add Transaction
+  </a>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="stat-label">Total Income</p>
+            <h3 class="stat-value text-success">${{ "%.2f"|format(total_income) }}</h3>
+          </div>
+          <div class="stat-icon bg-success-subtle text-success">
+            <i class="bi bi-arrow-down-circle"></i>
+          </div>
+        </div>
+        <small class="text-muted">This month</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="stat-label">Total Expenses</p>
+            <h3 class="stat-value text-danger">${{ "%.2f"|format(total_expenses) }}</h3>
+          </div>
+          <div class="stat-icon bg-danger-subtle text-danger">
+            <i class="bi bi-arrow-up-circle"></i>
+          </div>
+        </div>
+        <small class="text-muted">This month</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="stat-label">Net Balance</p>
+            <h3 class="stat-value {% if balance >= 0 %}text-primary{% else %}text-danger{% endif %}">
+              ${{ "%.2f"|format(balance) }}
+            </h3>
+          </div>
+          <div class="stat-icon bg-primary-subtle text-primary">
+            <i class="bi bi-wallet2"></i>
+          </div>
+        </div>
+        <small class="text-muted">Income − Expenses</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="stat-label">Savings Rate</p>
+            <h3 class="stat-value text-info">{{ savings_rate }}%</h3>
+          </div>
+          <div class="stat-icon bg-info-subtle text-info">
+            <i class="bi bi-piggy-bank"></i>
+          </div>
+        </div>
+        <div class="progress mt-2" style="height:4px;">
+          <div class="progress-bar bg-info" style="width:{{ savings_rate }}%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="card chart-card h-100">
+      <div class="card-body">
+        <h6 class="card-title fw-semibold mb-3">
+          <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Spending by Category
+        </h6>
+        {% if category_data %}
+          <div class="chart-container">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-pie-chart display-4 text-muted"></i>
+            <p class="text-muted mt-2">No expenses this month</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card chart-card h-100">
+      <div class="card-body">
+        <h6 class="card-title fw-semibold mb-3">
+          <i class="bi bi-bar-chart-fill me-2 text-primary"></i>6-Month Trend
+        </h6>
+        <div class="chart-container">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Transactions + Budget Status -->
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="card-title fw-semibold mb-0">
+            <i class="bi bi-clock-history me-2 text-primary"></i>Recent Transactions
+          </h6>
+          <a href="/transactions" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        {% if recent %}
+          <div class="list-group list-group-flush">
+            {% for t in recent %}
+            <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2">
+                <div class="txn-icon {% if t.type == 'income' %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %}">
+                  <i class="bi bi-{% if t.type == 'income' %}arrow-down{% else %}arrow-up{% endif %}"></i>
+                </div>
+                <div>
+                  <div class="fw-medium small">{{ t.description }}</div>
+                  <div class="text-muted" style="font-size:0.75rem;">{{ t.date }} &middot; {{ t.category }}</div>
+                </div>
+              </div>
+              <span class="fw-semibold {% if t.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                {% if t.type == 'income' %}+{% else %}-{% endif %}${{ "%.2f"|format(t.amount) }}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted text-center py-3">No transactions yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="card-title fw-semibold mb-0">
+            <i class="bi bi-speedometer2 me-2 text-primary"></i>Budget Status
+          </h6>
+          <a href="/budgets" class="btn btn-sm btn-outline-primary">Manage</a>
+        </div>
+        {% if budget_status %}
+          {% for b in budget_status %}
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="fw-medium">{{ b.category }}</span>
+              <span class="text-muted">${{ "%.0f"|format(b.spent) }} / ${{ "%.0f"|format(b.limit) }}</span>
+            </div>
+            <div class="progress" style="height:8px;">
+              <div class="progress-bar {% if b.percent >= 90 %}bg-danger{% elif b.percent >= 70 %}bg-warning{% else %}bg-success{% endif %}"
+                   style="width:{{ b.percent }}%"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-1" style="font-size:0.7rem;">
+              <span class="{% if b.percent >= 90 %}text-danger{% elif b.percent >= 70 %}text-warning{% else %}text-success{% endif %}">
+                {{ b.percent }}% used
+              </span>
+              <span class="text-muted">${{ "%.2f"|format(b.remaining) }} left</span>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-center py-3">No budgets set. <a href="/budgets">Set one now.</a></p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const categoryData = {{ category_data | tojson }};
+const monthlyTrend = {{ monthly_trend | tojson }};
+const colors = {{ category_colors | tojson }};
+
+if (categoryData.length > 0) {
+  const labels = categoryData.map(d => d[0]);
+  const values = categoryData.map(d => d[1]);
+  const bgColors = labels.map(l => colors[l] || '#9E9E9E');
+
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: bgColors, borderWidth: 2, borderColor: '#fff' }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 12 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: $${ctx.parsed.toFixed(2)}` } }
+      },
+      cutout: '65%'
+    }
+  });
+}
+
+new Chart(document.getElementById('trendChart'), {
+  type: 'bar',
+  data: {
+    labels: monthlyTrend.map(d => d.month),
+    datasets: [
+      { label: 'Income', data: monthlyTrend.map(d => d.income), backgroundColor: 'rgba(75,192,90,0.75)', borderRadius: 6 },
+      { label: 'Expenses', data: monthlyTrend.map(d => d.expenses), backgroundColor: 'rgba(255,99,132,0.75)', borderRadius: 6 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { font: { size: 12 } } } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { callback: v => '$' + v } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}
